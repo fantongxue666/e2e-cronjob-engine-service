@@ -20,11 +20,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 @EnableScheduling
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 public class TaskConfiguration {
+
+    /**
+     * 定时任务线程池
+     * @return
+     */
     @Bean(name = ScheduledAnnotationBeanPostProcessor.DEFAULT_TASK_SCHEDULER_BEAN_NAME)
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     public ScheduledExecutorService scheduledAnnotationProcessor() {
         return Executors.newScheduledThreadPool(5, new DefaultThreadFactory());
     }
+
 
     private static class DefaultThreadFactory implements ThreadFactory {
         private static final AtomicInteger poolNumber = new AtomicInteger(1);
