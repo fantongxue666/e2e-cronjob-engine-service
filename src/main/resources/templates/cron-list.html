@@ -1,0 +1,494 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+	<title>定时任务管理</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+	<link rel="stylesheet" th:href="@{/vendor/bootstrap/css/bootstrap.min.css}">
+	<link rel="stylesheet" th:href="@{/vendor/font-awesome/css/font-awesome.min.css}">
+	<link rel="stylesheet" th:href="@{/vendor/linearicons/style.css}">
+	<link rel="stylesheet" th:href="@{/vendor/chartist/css/chartist-custom.css}">
+	<link rel="stylesheet" th:href="@{/css/main.css}">
+	<link rel="stylesheet" th:href="@{/css/demo.css}">
+	<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,600,700" rel="stylesheet">
+	<link rel="apple-touch-icon" sizes="76x76" th:href="@{/img/apple-icon.png}">
+	<link rel="icon" type="image/png" sizes="96x96" th:href="@{/img/favicon.png}">
+	<script th:src="@{/vendor/jquery/jquery.min.js}"></script>
+	<script th:src="@{/vendor/bootstrap/js/bootstrap.min.js}"></script>
+	<script th:src="@{/vendor/jquery-slimscroll/jquery.slimscroll.min.js}"></script>
+	<script th:src="@{/vendor/jquery.easy-pie-chart/jquery.easypiechart.min.js}"></script>
+	<script th:src="@{/vendor/chartist/js/chartist.min.js}"></script>
+	<script th:src="@{/scripts/klorofil-common.js}"></script>
+</head>
+<body>
+<div id="wrapper">
+	<!-- NAVBAR -->
+
+	<nav class="navbar navbar-default navbar-fixed-top">
+		<div class="brand">
+			<a href="index.html"><img th:src="@{/img/logo-dark.png}" alt="Klorofil Logo" class="img-responsive logo"></a>
+		</div>
+		<div class="container-fluid">
+			<div class="navbar-btn">
+				<button type="button" class="btn-toggle-fullwidth"><i class="lnr lnr-arrow-left-circle"></i></button>
+			</div>
+			<form class="navbar-form navbar-left">
+				<div class="input-group">
+					<input type="text" value="" class="form-control" placeholder="Search dashboard...">
+					<span class="input-group-btn"><button type="button" class="btn btn-primary">Go</button></span>
+				</div>
+			</form>
+			<div class="navbar-btn navbar-btn-right">
+				<a class="btn btn-success update-pro" href="#downloads/klorofil-pro-bootstrap-admin-dashboard-template/?utm_source=klorofil&utm_medium=template&utm_campaign=KlorofilPro" title="Upgrade to Pro" target="_blank"><i class="fa fa-rocket"></i> <span>UPGRADE TO PRO</span></a>
+			</div>
+			<div id="navbar-menu">
+				<ul class="nav navbar-nav navbar-right">
+					<li class="dropdown">
+						<a href="#" class="dropdown-toggle icon-menu" data-toggle="dropdown">
+							<i class="lnr lnr-alarm"></i>
+							<span class="badge bg-danger">5</span>
+						</a>
+						<ul class="dropdown-menu notifications">
+							<li><a href="#" class="notification-item"><span class="dot bg-warning"></span>System space is almost full</a></li>
+							<li><a href="#" class="notification-item"><span class="dot bg-danger"></span>You have 9 unfinished tasks</a></li>
+							<li><a href="#" class="notification-item"><span class="dot bg-success"></span>Monthly report is available</a></li>
+							<li><a href="#" class="notification-item"><span class="dot bg-warning"></span>Weekly meeting in 1 hour</a></li>
+							<li><a href="#" class="notification-item"><span class="dot bg-success"></span>Your request has been approved</a></li>
+							<li><a href="#" class="more">See all notifications</a></li>
+						</ul>
+					</li>
+					<li class="dropdown">
+						<a href="#" class="dropdown-toggle" data-toggle="dropdown"><img th:src="@{/img/user.png}" class="img-circle" alt="Avatar"> <span>管理员</span> <i class="icon-submenu lnr lnr-chevron-down"></i></a>
+						<ul class="dropdown-menu">
+							<li><a href="#"><i class="lnr lnr-user"></i> <span>我的主页</span></a></li>
+							<li><a href="#"><i class="lnr lnr-envelope"></i> <span>消息</span></a></li>
+							<li><a href="#"><i class="lnr lnr-cog"></i> <span>设置</span></a></li>
+							<li><a href="/view/login"><i class="lnr lnr-exit"></i> <span>退出</span></a></li>
+						</ul>
+					</li>
+
+				</ul>
+			</div>
+		</div>
+	</nav>
+	<!-- END NAVBAR -->
+	<!-- LEFT SIDEBAR -->
+	<div id="sidebar-nav" class="sidebar">
+		<div class="sidebar-scroll">
+			<nav>
+				<ul class="nav">
+					<li><a href="/view/index" class=""><i class="lnr lnr-home"></i> <span>仪表盘</span></a></li>
+					<li><a href="/view/cronList" class="active"><i class="lnr lnr-code"></i> <span>定时任务管理</span></a></li>
+					<li><a href="/view/serviceList" class=""><i class="lnr lnr-chart-bars"></i> <span>服务器管理</span></a></li>
+					<!--<li>-->
+					<!--<a href="#subPages" data-toggle="collapse" class="collapsed"><i class="lnr lnr-file-empty"></i> <span>Pages</span> <i class="icon-submenu lnr lnr-chevron-left"></i></a>-->
+					<!--<div id="subPages" class="collapse ">-->
+					<!--<ul class="nav">-->
+					<!--<li><a href="page-profile.html" class="">Profile</a></li>-->
+					<!--<li><a href="page-login.html" class="">Login</a></li>-->
+					<!--<li><a href="page-lockscreen.html" class="">Lockscreen</a></li>-->
+					<!--</ul>-->
+					<!--</div>-->
+					<!--</li>-->
+				</ul>
+			</nav>
+		</div>
+	</div>
+	<!-- 新增模态框 -->
+	<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 class="modal-title" id="myModalLabel">新增任务</h4>
+				</div>
+				<div class="modal-body">
+					<form class="form-horizontal" role="form">
+						<div class="form-group">
+							<label for="cronName" class="col-sm-2 control-label">任务名称</label>
+							<div class="col-sm-10">
+								<input type="text" class="form-control" id="cronName" placeholder="请输入任务名称">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="cronExpression" class="col-sm-2 control-label">正则表达式</label>
+							<div class="col-sm-10">
+								<input type="text" class="form-control" id="cronExpression" placeholder="请输入正则表达式">
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-2 control-label">选择任务所在服务器</label>
+							<div class="col-sm-10">
+								<select id="serviceId" class="form-control">
+									<option disabled selected>请选择</option>
+									<option value="g51h234io5g123">172.16.2.221</option>
+									<option value="g51h234io5g123234">172.16.2.115</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="cronExpression" class="col-sm-2 control-label">接口URI</label>
+							<div class="col-sm-10">
+								<input type="text" class="form-control" id="cronUri" placeholder="请输入URI">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="" class="col-sm-2 control-label">定时策略描述</label>
+							<div class="col-sm-10">
+								<textarea id="memo" class="form-control" rows="3"></textarea>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" id="add" class="btn btn-primary">提交</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal -->
+	</div>
+	<!-- 编辑模态框 -->
+	<div class="modal fade" id="myModal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabe2" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+					<h4 class="modal-title" id="myModalLabe2">编辑任务</h4>
+				</div>
+				<div class="modal-body">
+					<form class="form-horizontal" role="form">
+						<div class="form-group">
+							<label for="cronName" class="col-sm-2 control-label">任务名称</label>
+							<div class="col-sm-10">
+								<input type="text" class="form-control" id="cronName2" placeholder="请输入任务名称">
+							</div>
+							<input type="hidden" id="cronId" />
+						</div>
+						<div class="form-group">
+							<label for="cronExpression" class="col-sm-2 control-label">正则表达式</label>
+							<div class="col-sm-10">
+								<input type="text" class="form-control" id="cronExpression2" placeholder="请输入正则表达式">
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-sm-2 control-label">选择任务所在服务器</label>
+							<div class="col-sm-10">
+								<select id="serviceId2" class="form-control">
+									<option disabled selected>请选择</option>
+									<option value="g51h234io5g123">172.16.2.221</option>
+									<option value="g51h234io5g123234">172.16.2.115</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="cronExpression" class="col-sm-2 control-label">接口URI</label>
+							<div class="col-sm-10">
+								<input type="text" class="form-control" id="cronUri2" placeholder="请输入URI">
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="" class="col-sm-2 control-label">定时策略描述</label>
+							<div class="col-sm-10">
+								<textarea id="memo2" class="form-control" rows="3"></textarea>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+					<button type="button" id="update" class="btn btn-primary">提交</button>
+				</div>
+			</div><!-- /.modal-content -->
+		</div><!-- /.modal -->
+	</div>
+	<!-- MAIN -->
+	<div class="main">
+		<!-- MAIN CONTENT -->
+		<div class="main-content">
+			<div class="container-fluid">
+				<!-- OVERVIEW -->
+				<div class="panel panel-headline">
+					<form style="margin-left: 3%;margin-top: 2%;" class="form-inline">
+						<div class="form-group">
+							<label for="exampleInputName2">任务名称&nbsp;&nbsp;</label>
+							<input type="text" class="form-control" id="exampleInputName2" placeholder="任务名称">
+						</div>
+						<div style="margin-left: 15px;" class="form-group">
+							<label>服务器&nbsp;&nbsp;</label>
+							<select class="form-control">
+								<option disabled="disabled" selected="selected" style="color: lightgrey">请选择</option>
+								<option>172.16.2.221</option>
+								<option>172.16.2.115</option>
+							</select>
+						</div>
+						<button style="margin-left: 15px;" type="submit" class="btn btn-primary">搜索</button>
+						<button style="float: right;margin-right: 100px;" type="button" class="btn btn-primary" data-toggle="modal" data-target="#myModal">新增任务</button>
+						<button id="bjrw" type="button" style="display: none;" class="btn btn-primary" data-toggle="modal" data-target="#myModal2">编辑任务</button>
+					</form>
+					<table style="margin-top: 2%;" class="table table-hover">
+						<thead>
+						<tr>
+							<th>任务名称</th>
+							<th>正则表达式</th>
+							<th>所在服务器</th>
+							<th>请求地址URI</th>
+							<th>策略</th>
+							<th>状态</th>
+							<th>创建时间</th>
+							<th>操作</th>
+						</tr>
+						</thead>
+						<tbody id="list">
+						<!--<tr>-->
+							<!--<td>Tanmay</td>-->
+							<!--<td>Bangalore</td>-->
+							<!--<td>560001</td>-->
+							<!--<td>560001</td>-->
+							<!--<td>560001</td>-->
+							<!--<td>560001</td>-->
+							<!--<td>-->
+								<!--<button class="btn-xs btn-primary">编辑</button>&nbsp;&nbsp;-->
+								<!--<button class="btn-xs btn-warning">停止</button>&nbsp;&nbsp;-->
+								<!--<button class="btn-xs btn-success">开启</button>&nbsp;&nbsp;-->
+								<!--<button class="btn-xs btn-danger">删除</button>-->
+							<!--</td>-->
+						<!--</tr>-->
+						</tbody>
+					</table>
+
+
+
+
+					<div style="height: 50px;"></div>
+				</div>
+
+			</div>
+		</div>
+		<!-- END MAIN CONTENT -->
+	</div>
+	<!-- END MAIN -->
+	<div class="clearfix"></div>
+</div>
+<link rel="stylesheet" href="https://www.layuicdn.com/layui-v2.5.5/css/layui.css">
+<script src="https://www.layuicdn.com/layui-v2.5.5/layui.js"></script>
+<script>
+	var layer;
+    layui.use('layer', function(){
+         layer = layui.layer;
+    });
+
+    $("#update").click(function () {
+        var cronId = $("#cronId").val();
+        var cronName = $("#cronName2").val();
+        var cronExpression = $("#cronExpression2").val();
+        var serviceId = $("#serviceId2").val();
+        var cronUri = $("#cronUri2").val();
+        var memo = $("#memo2").val();
+        if(cronName==""||cronExpression==""||serviceId==""||cronUri==""||memo==""){
+            // layer.show("请完善表单信息");
+            layer.open({
+                type: 1
+                ,content: '<div style="padding: 20px 100px;">请完善表单信息</div>'
+                ,btn: '关闭'
+                ,btnAlign: 'c' //按钮居中
+                ,shade: 0 //不显示遮罩
+                ,yes: function(){
+                    layer.closeAll();
+                }
+            });
+        }else {
+            $.post(
+                "/cronInfo/update",
+                {
+                    cronName:cronName,
+                    cronExpression:cronExpression,
+                    serviceId:serviceId,
+                    cronUri:cronUri,
+                    memo:memo,
+					cronId:cronId
+                },
+                function (data) {
+                    layer.open({
+                        type: 1
+                        ,content: '<div style="padding: 20px 50px;">更新成功（任务必须重启才可生效）</div>'
+                        ,btn: '收到'
+                        ,btnAlign: 'c' //按钮居中
+                        ,shade: 0 //不显示遮罩
+                        ,yes: function(){
+                            layer.closeAll();
+                            window.location.href = window.location.href;
+                        }
+                    });
+                }
+            );
+		}
+    });
+
+    $("#list").on('click', ".test", function(){
+        var id = $(this).attr("id");
+        if(id.indexOf("edit")!=-1){
+            $("#bjrw").click();
+            var newId = id.slice(4);
+            //编辑
+			$.get(
+			    "/cronInfo/getById",
+				{id:newId},
+				function (data) {
+					var result = data.result;
+					$("#cronId").val(result.cronId);
+                    $("#cronName2").val(result.cronName);
+                    $("#cronExpression2").val(result.cronExpression);
+                    $("#serviceId2").val(result.serviceId);
+                    $("#cronUri2").val(result.cronUri);
+                    $("#memo2").val(result.memo);
+                }
+			);
+		}else if(id.indexOf("start")!=-1){
+            //开启
+            var newId = id.slice(5);
+            $.get(
+                "/cronInfo/start",
+                {id:newId},
+                function (data) {
+                   window.location.href=window.location.href;
+                }
+            );
+		}else if(id.indexOf("stop")!=-1){
+            //停止
+            var newId = id.slice(4);
+            $.get(
+                "/cronInfo/stop",
+                {id:newId},
+                function (data) {
+                    window.location.href=window.location.href;
+                }
+            );
+        }else if(id.indexOf("del")!=-1){
+            var newId = id.slice(3);
+            //删除
+            layer.confirm('确认要删除吗？', {
+                btn : [ 'YES', 'NO' ]//按钮
+            }, function(index) {
+                layer.close(index);
+                $.get(
+                    "/cronInfo/del",
+                    {id:newId},
+                    function (data) {
+                        var code = data.status;
+                        if(code == "500"){
+                            layer.open({
+                                type: 1
+                                ,content: '<div style="padding: 20px 100px;">'+data.msg+'</div>'
+                                ,btn: '关闭'
+                                ,btnAlign: 'c' //按钮居中
+                                ,shade: 0 //不显示遮罩
+                                ,yes: function(){
+                                    layer.closeAll();
+                                }
+                            });
+						}else{
+                            window.location.href=window.location.href;
+						}
+
+                    }
+                );
+            });
+        }
+
+    })
+	$("#add").click(function () {
+		var cronName = $("#cronName").val();
+		var cronExpression = $("#cronExpression").val();
+		var serviceId = $("#serviceId").val();
+		var cronUri = $("#cronUri").val();
+		var memo = $("#memo").val();
+		if(cronName==""||cronExpression==""||serviceId==""||cronUri==""||memo==""){
+		    // layer.show("请完善表单信息");
+            layer.open({
+                type: 1
+                ,content: '<div style="padding: 20px 100px;">请完善表单信息</div>'
+                ,btn: '关闭'
+                ,btnAlign: 'c' //按钮居中
+                ,shade: 0 //不显示遮罩
+                ,yes: function(){
+                    layer.closeAll();
+                }
+            });
+		}else{
+		    $.post(
+		        "/cronInfo/add",
+				{
+				    cronName:cronName,
+                    cronExpression:cronExpression,
+                    serviceId:serviceId,
+                    cronUri:cronUri,
+                    memo:memo
+				},
+				function (data) {
+                    layer.open({
+                        type: 1
+                        ,content: '<div style="padding: 20px 100px;">新增成功</div>'
+                        ,btn: '收到'
+                        ,btnAlign: 'c' //按钮居中
+                        ,shade: 0 //不显示遮罩
+                        ,yes: function(){
+                            layer.closeAll();
+                            window.location.href = window.location.href;
+                        }
+                    });
+                }
+			);
+		}
+    });
+
+
+	$(function () {
+		$.get(
+		    "/cronInfo/all",
+			function (data) {
+				var list = data.result;
+				var tempStr = '';
+				for(var i=0;i<list.length;i++){
+				    if(list[i].cronStatus == "1"){
+				        //已开启
+                        tempStr += '<tr>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].cronName+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].cronExpression+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].serviceName+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].cronUri+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].memo+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td style="color: limegreen;">已开启</td>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].createTime+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td>\n' +
+                            '\t\t\t\t\t\t\t\t<button id="edit'+list[i].cronId+'" class="test btn-xs btn-primary">编辑</button>&nbsp;&nbsp;\n' +
+                            '\t\t\t\t\t\t\t\t<button id="stop'+list[i].cronId+'" class="test btn-xs btn-warning">停止</button>&nbsp;&nbsp;\n' +
+                            '\t\t\t\t\t\t\t\t<button id="del'+list[i].cronId+'" class="test btn-xs btn-danger">删除</button>\n' +
+                            '\t\t\t\t\t\t\t</td>\n' +
+                            '\t\t\t\t\t\t</tr>';
+					}else{
+				        //已停止
+                        tempStr += '<tr>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].cronName+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].cronExpression+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].serviceName+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].cronUri+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].memo+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td style="color: red;">已停止</td>\n' +
+                            '\t\t\t\t\t\t\t<td>'+list[i].createTime+'</td>\n' +
+                            '\t\t\t\t\t\t\t<td>\n' +
+                            '\t\t\t\t\t\t\t\t<button id="edit'+list[i].cronId+'" class="test btn-xs btn-primary">编辑</button>&nbsp;&nbsp;\n' +
+                            '\t\t\t\t\t\t\t\t<button id="start'+list[i].cronId+'" class="test btn-xs btn-success">开启</button>&nbsp;&nbsp;\n' +
+                            '\t\t\t\t\t\t\t\t<button id="del'+list[i].cronId+'" class="test btn-xs btn-danger">删除</button>\n' +
+                            '\t\t\t\t\t\t\t</td>\n' +
+                            '\t\t\t\t\t\t</tr>';
+					}
+				}
+				$("#list").html(tempStr);
+            }
+		);
+    });
+</script>
+</body>
+</html>
