@@ -10,6 +10,7 @@ import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.config.CronTask;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
@@ -28,30 +29,44 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author FanJiangFeng
  * @createTime 2022年01月13日 14:42:00
+ *
+ * 动态操作定时任务的全靠SchedulingConfigurer类
+ * 关于SchedulingConfigurer类的讲解（推荐）：https://cloud.tencent.com/developer/article/1362794
  */
 @Configuration
+@EnableScheduling
 public class DynamicTask implements SchedulingConfigurer{
     @Autowired
     private CronInfoService cronInfoService;
     @Autowired
     private ServiceInfoService serviceInfoService;
 
-    private static final ExecutorService es = new ThreadPoolExecutor(10, 20,
-            0L, TimeUnit.MILLISECONDS,
-            new LinkedBlockingQueue<>(10),
-            new DynamicTaskConsumeThreadFactory());
-
-
+    //定时任务注册器
     private volatile ScheduledTaskRegistrar registrar;
+
+    //ScheduledFuture 真正的定时任务执行者
+    //这里key = taskId（任务id，自定义，唯一标识） value = 定时任务实例
     private final ConcurrentHashMap<String, ScheduledFuture<?>> scheduledFutures = new ConcurrentHashMap<>();
+
+    //CronTask 真正的定时任务
+    //这里key = taskId（任务id，自定义，唯一标识） value = 定时任务
     private final ConcurrentHashMap<String, CronTask> cronTasks = new ConcurrentHashMap<>();
 
+    //任务对象信息集合
     private volatile List<TaskConstant> taskConstants = new ArrayList<>();
 
     @Override
     public void configureTasks(ScheduledTaskRegistrar registrar) {
         this.registrar = registrar;
+        /**
+         * 给定时任务注册器中添加一个Trigger（PeriodicTrigger），五秒已执行，根据目前的taskConstants自定义任务对象集合更新系统的定时任务
+         * Trigger接口
+         *      CronTrigger实现类
+         *      PeriodicTrigger实现类
+         * 具体CronTrigger和PeriodicTrigger的区别见文章：https://blog.csdn.net/qq_39720208/article/details/120970665
+         */
         this.registrar.addTriggerTask(() -> {
+                    //定时轮询自定义任务对象，如果自定义任务对象集合不为空，并把自定义任务对象信息装载到TimingTask中
                     if (!CollectionUtils.isEmpty(taskConstants)) {
                         System.out.println("检测动态定时任务列表...");
                         List<TimingTask> tts = new ArrayList<>();
@@ -62,6 +77,7 @@ public class DynamicTask implements SchedulingConfigurer{
                                     tt.setTaskId(taskConstant.getTaskId());
                                     tts.add(tt);
                                 });
+                        //刷新任务状态
                         this.refreshTasks(tts);
                     }
                 }
@@ -73,6 +89,10 @@ public class DynamicTask implements SchedulingConfigurer{
         return taskConstants;
     }
 
+    /**
+     * 根据taskId停止任务
+     * @param taskId 任务id
+     */
     public void stopTaskByTaskId(String taskId){
         ScheduledFuture<?> scheduledFuture = scheduledFutures.get(taskId);
         if(scheduledFuture != null){
@@ -83,6 +103,11 @@ public class DynamicTask implements SchedulingConfigurer{
         }
     }
 
+    /**
+     * 根据taskId和cron开启一个新任务
+     * @param taskId 任务id
+     * @param cron 正则表达式
+     */
     public void startTask(String taskId,String cron){
         List<DynamicTask.TaskConstant> taskConstants = getTaskConstants();
         ScheduledFuture<?> scheduledFuture = scheduledFutures.remove(taskId);
@@ -97,15 +122,22 @@ public class DynamicTask implements SchedulingConfigurer{
         System.out.println("------------------- 添加新任务成功！！ ----------------");
     }
 
+
+    /**
+     * 刷新任务状态
+     * @param tasks List<TimingTask>
+     */
     private void refreshTasks(List<TimingTask> tasks) {
-        //取消已经删除的策略任务
+        //遍历taskId列表，如果taskId对应的任务已经不存在了，则取消系统中该任务的执行
         Set<String> taskIds = scheduledFutures.keySet();
         for (String taskId : taskIds) {
             if (!exists(tasks, taskId)) {
                 scheduledFutures.get(taskId).cancel(false);
             }
         }
+        //对所有定时任务信息进行遍历
         for (TimingTask tt : tasks) {
+            //校验正则表达式是否合法
             String expression = tt.getExpression();
             if (StringUtils.isBlank(expression) || !CronSequenceGenerator.isValidExpression(expression)) {
                 System.out.println("定时任务DynamicTask cron表达式不合法: " + expression);
@@ -121,13 +153,28 @@ public class DynamicTask implements SchedulingConfigurer{
                 scheduledFutures.remove(tt.getTaskId()).cancel(false);
                 cronTasks.remove(tt.getTaskId());
             }
+            //创建真实的定时任务
             CronTask task = new CronTask(tt, expression);
+            /**
+             * TaskScheduler  = registrar.getScheduler() 得到任务调度器
+             * ScheduledFuture<?> future = TaskScheduler.schedule(Runnable task, Date startTime) 安排给定的Runnable，在指定的执行时间调用它，也就是执行TimingTask的run方法内容
+             *
+             * task：真实的定时任务 future：真实的定时任务执行者
+             * 【task到future还需要触发】
+             */
             ScheduledFuture<?> future = registrar.getScheduler().schedule(task.getRunnable(), task.getTrigger());
+            //分别存放到集合中去
             cronTasks.put(tt.getTaskId(), task);
             scheduledFutures.put(tt.getTaskId(), future);
         }
     }
 
+    /**
+     * 判断定时任务是否存在
+     * @param tasks 任务
+     * @param taskId 任务id
+     * @return
+     */
     private boolean exists(List<TimingTask> tasks, String taskId) {
         for (TimingTask task : tasks) {
             if (task.getTaskId().equals(taskId)) {
@@ -137,11 +184,17 @@ public class DynamicTask implements SchedulingConfigurer{
         return false;
     }
 
+    /**
+     * 销毁当前系统中正在运行的所有定时任务
+     */
     @PreDestroy
     public void destroy() {
         this.registrar.destroy();
     }
 
+    /**
+     * 自定义任务对象，存储taskId和cron表达式，由业务层调用传入
+     */
     public static class TaskConstant {
         private String cron;
         private String taskId;
@@ -163,6 +216,13 @@ public class DynamicTask implements SchedulingConfigurer{
         }
     }
 
+    /**
+     * 也算是一个定时任务吧（汗。。强行解释）
+     * 是更新后的定时任务，实质上和上面一样，只不过作用的时间段有区别，前者在检测动态定时任务列表之前，后者在检测动态定时任务列表之后
+     *
+     * 定时任务就是一个异步线程对象（Runnable） And 定时Trigger
+     * 实现Runable，为创建真实的定时任务CronTask做准备
+     */
     private class TimingTask implements Runnable {
         private String expression;
 
@@ -189,36 +249,6 @@ public class DynamicTask implements SchedulingConfigurer{
             HttpUtil.sendGet(url,null);
 
             //############# 定时任务的业务逻辑 END ###############
-
-
-            //设置队列大小10
-//            System.out.println("当前CronTask: " + this);
-            DynamicBlockingQueue queue = new DynamicBlockingQueue(3);
-            es.submit(() -> {
-                while (!queue.isDone() || !queue.isEmpty()) {
-                    try {
-                        String content = queue.poll(500, TimeUnit.MILLISECONDS);
-                        if (StringUtils.isBlank(content)) {
-                            return;
-                        }
-//                        System.out.println("DynamicBlockingQueue 消费：" + content);
-                        TimeUnit.MILLISECONDS.sleep(500);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
-
-            //队列放入数据
-            for (int i = 0; i < 5; ++i) {
-                try {
-                    queue.put(String.valueOf(i));
-//                    System.out.println("DynamicBlockingQueue 生产：" + i);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            queue.setDone(true);
         }
 
         public String getExpression() {
@@ -273,20 +303,4 @@ public class DynamicTask implements SchedulingConfigurer{
         }
     }
 
-    private static class DynamicBlockingQueue extends LinkedBlockingQueue<String> {
-        DynamicBlockingQueue(int capacity) {
-            super(capacity);
-        }
-
-
-        private volatile boolean done = false;
-
-        public boolean isDone() {
-            return done;
-        }
-
-        public void setDone(boolean done) {
-            this.done = done;
-        }
-    }
 }
